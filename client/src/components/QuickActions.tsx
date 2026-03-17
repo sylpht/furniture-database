@@ -1,7 +1,7 @@
 /*
  * Quick Actions — call, email, open website buttons
  */
-import { Phone, Mail, Globe, MessageCircle } from "lucide-react";
+import { Phone, Mail, Globe, MessageCircle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -11,10 +11,27 @@ interface QuickActionsProps {
   site?: string;
   whatsapp?: string;
   telegram?: string;
+  companyName?: string;
+  scriptText?: string;
 }
 
-export default function QuickActions({ phone, email, site, whatsapp, telegram }: QuickActionsProps) {
+export default function QuickActions({ phone, email, site, whatsapp, telegram, companyName, scriptText }: QuickActionsProps) {
   const cleanPhone = phone?.replace(/[^+\d]/g, "").split(",")[0] || "";
+  
+  const handleWhatsApp = () => {
+    const message = scriptText ? encodeURIComponent(scriptText) : "Здравствуйте! Я хотел бы обсудить возможность сотрудничества.";
+    const number = (whatsapp || cleanPhone).replace(/[^+\d]/g, "").replace("+", "");
+    window.open(`https://wa.me/${number}?text=${message}`, "_blank");
+  };
+  
+  const handleTelegram = () => {
+    const message = scriptText ? encodeURIComponent(scriptText) : "Здравствуйте! Я хотел бы обсудить возможность сотрудничества.";
+    if (telegram) {
+      // If telegram is a username (starts with @), use t.me
+      const telegramHandle = telegram.startsWith("@") ? telegram.slice(1) : telegram;
+      window.open(`https://t.me/${telegramHandle}?text=${message}`, "_blank");
+    }
+  };
 
   return (
     <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
@@ -51,11 +68,21 @@ export default function QuickActions({ phone, email, site, whatsapp, telegram }:
       {(whatsapp || cleanPhone) && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950" asChild>
-              <a href={`https://wa.me/${(whatsapp || cleanPhone).replace(/[^+\d]/g, "").replace("+", "")}`} target="_blank" rel="noopener noreferrer"><MessageCircle className="w-4 h-4" /></a>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950" onClick={handleWhatsApp}>
+              <MessageCircle className="w-4 h-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent><p>WhatsApp</p></TooltipContent>
+          <TooltipContent><p>WhatsApp {scriptText ? "со скриптом" : ""}</p></TooltipContent>
+        </Tooltip>
+      )}
+      {telegram && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950" onClick={handleTelegram}>
+              <Send className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent><p>Telegram {scriptText ? "со скриптом" : ""}</p></TooltipContent>
         </Tooltip>
       )}
     </div>

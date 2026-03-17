@@ -201,6 +201,20 @@ const SCRIPTS: Record<string, Record<Tone, Record<Product, ScriptVariant>>> = {
   },
 };
 
+export function getFullScript(company: Company, tone: Tone, product: Product): string {
+  const companyType = company.Тип || "Мебельная компания";
+  const scriptVariants = SCRIPTS[companyType] || SCRIPTS["Мебельная компания"];
+  const script = scriptVariants[tone][product];
+  
+  const personalize = (text: string) => {
+    return text
+      .replace(/\[Имя\]/g, "___")
+      .replace(/\[Ваша компания\]/g, "___");
+  };
+  
+  return `${personalize(script.intro)}\n\n${personalize(script.hook)}\n\n${personalize(script.offer)}\n\n${personalize(script.close)}`;
+}
+
 export default function CallScriptPanel({ company }: { company: Company }) {
   const [expanded, setExpanded] = useState(false);
   const [copiedSection, setCopiedSection] = useState<string | null>(null);

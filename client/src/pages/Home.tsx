@@ -27,7 +27,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useCallStatus, CALL_STATUS_LABELS, CALL_STATUS_COLORS, type CallStatus } from "@/hooks/useCallStatus";
 import { usePriorityScore, WEIGHT_LABELS, type PriorityWeights } from "@/hooks/usePriorityScore";
 import RussiaMap from "@/components/RussiaMap";
-import CallScriptPanel from "@/components/CallScripts";
+import CallScriptPanel, { getFullScript } from "@/components/CallScripts";
 import QuickActions from "@/components/QuickActions";
 import { SiteCheckerPanel, SiteStatusBadge, useSiteChecker } from "@/components/SiteChecker";
 import { exportToCSV } from "@/lib/exportCSV";
@@ -170,7 +170,7 @@ function CompanyCard({ company, index, priorityScore, getStatus, setStatus, getN
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-              <QuickActions phone={company["Телефон"]} email={company["Email"]} site={company["Сайт"]} whatsapp={company["WhatsApp"]} telegram={company["Telegram"]} />
+              <QuickActions phone={company["Телефон"]} email={company["Email"]} site={company["Сайт"]} whatsapp={company["WhatsApp"]} telegram={company["Telegram"]} companyName={company["Название"]} scriptText={getFullScript(company, "official", "all")} />
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2"
                 style={{ borderColor: priorityScore >= 70 ? "#0d9488" : priorityScore >= 40 ? "#f59e0b" : "#94a3b8", color: priorityScore >= 70 ? "#0d9488" : priorityScore >= 40 ? "#f59e0b" : "#94a3b8" }}>
                 {priorityScore}
