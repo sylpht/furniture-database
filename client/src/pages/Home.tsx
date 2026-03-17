@@ -161,6 +161,7 @@ function CompanyCard({ company, index, priorityScore, getStatus, setStatus, getN
               <div className="flex items-center gap-2 flex-wrap mb-1.5">
                 <h3 className="font-heading font-bold text-base sm:text-lg text-card-foreground truncate">{company["Название"]}</h3>
                 {level === "high" && <Star className="w-4 h-4 text-teal-500 fill-teal-500 shrink-0" />}
+                {company["is_hot"] && <Badge className="bg-red-500 text-white text-xs animate-pulse flex items-center gap-1"><Sparkles className="w-3 h-3" />Горячо</Badge>}
                 <TypeBadge type={company.Тип} />
                 <SiteStatusBadge status={siteStatus} />
               </div>
