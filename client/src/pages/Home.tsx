@@ -633,10 +633,37 @@ export default function Home() {
 
           {/* MAP TAB */}
           <TabsContent value="map" className="space-y-4">
-            <Card className="bg-card border-border shadow-sm">
-              <CardHeader className="pb-2"><CardTitle className="font-heading text-lg flex items-center gap-2"><MapIcon className="w-5 h-5 text-primary" />Карта компаний по городам</CardTitle></CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">Размер точки пропорционален количеству компаний. Бирюзовые — города с высоким потенциалом. Нажмите на город для фильтрации.</p>
+            <Card className="dark:bg-gradient-to-br dark:from-slate-800 dark:to-slate-900 dark:border-cyan-500/30 bg-card border-border shadow-sm">
+              <CardHeader className="pb-3 dark:border-b dark:border-cyan-500/20">
+                <CardTitle className="font-heading text-lg flex items-center gap-2">
+                  <MapIcon className="w-5 h-5 dark:text-cyan-400 text-primary" />
+                  <span className="dark:text-cyan-300">Интерактивная карта России</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                  <div className="flex items-start gap-2 dark:bg-slate-700/50 bg-muted/50 p-3 rounded-lg">
+                    <div className="w-4 h-4 rounded-full dark:bg-cyan-400 bg-primary mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium dark:text-cyan-300 text-primary">Высокий потенциал</p>
+                      <p className="text-xs dark:text-slate-400 text-muted-foreground">Города с перспективными компаниями</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2 dark:bg-slate-700/50 bg-muted/50 p-3 rounded-lg">
+                    <div className="w-4 h-4 rounded-full dark:bg-slate-500 bg-muted-foreground mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium dark:text-slate-300 text-foreground">Другие города</p>
+                      <p className="text-xs dark:text-slate-400 text-muted-foreground">Размер точки = количество компаний</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2 dark:bg-slate-700/50 bg-muted/50 p-3 rounded-lg">
+                    <MapIcon className="w-4 h-4 dark:text-cyan-400 text-primary mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium dark:text-cyan-300 text-primary">Интерактивность</p>
+                      <p className="text-xs dark:text-slate-400 text-muted-foreground">Кликните на город для фильтрации</p>
+                    </div>
+                  </div>
+                </div>
                 <RussiaMap cities={mapCities} onCityClick={(city) => setSelectedCity(city)} />
               </CardContent>
             </Card>

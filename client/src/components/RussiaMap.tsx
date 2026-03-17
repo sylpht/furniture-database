@@ -1,6 +1,7 @@
 /*
  * Interactive Russia Map - SVG-based with city dots
  * Shows company distribution across Russian cities
+ * Enhanced with dark theme support and neon glow effects
  */
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
@@ -45,16 +46,39 @@ export default function RussiaMap({ cities, onCityClick }: RussiaMapProps) {
   }, [cities]);
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full rounded-lg overflow-hidden bg-gradient-to-br dark:from-slate-900 dark:to-slate-800">
       <svg viewBox="0 0 1000 500" className="w-full h-auto" style={{ minHeight: 300 }}>
+        <defs>
+          {/* Glow filter for neon effect */}
+          <filter id="neonGlow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+            <feMerge>
+              <feMergeNode in="coloredBlur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+          
+          {/* Radial gradient for city glow */}
+          <radialGradient id="cityGlowGradient" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#00bcd4" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#00bcd4" stopOpacity="0" />
+          </radialGradient>
+          
+          {/* Shadow filter */}
+          <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx="0" dy="0" stdDeviation="2" floodOpacity="0.3" />
+          </filter>
+        </defs>
+
         {/* Background */}
         <rect width="1000" height="500" fill="none" />
 
-        {/* Simplified Russia outline */}
+        {/* Simplified Russia outline - enhanced for dark theme */}
         <path
           d="M60,280 L80,260 L120,250 L160,240 L200,220 L240,200 L280,180 L300,160 L340,150 L380,140 L400,130 L440,120 L480,115 L520,110 L560,105 L600,100 L640,95 L680,100 L720,110 L760,120 L800,130 L840,140 L880,150 L920,160 L950,180 L950,300 L920,320 L880,340 L840,350 L800,360 L760,370 L720,375 L680,380 L640,385 L600,390 L560,385 L520,380 L480,375 L440,370 L400,360 L360,350 L320,340 L280,330 L240,320 L200,310 L160,300 L120,290 L80,285 Z"
-          className="fill-muted/30 stroke-border"
+          className="dark:fill-slate-800/50 dark:stroke-cyan-500/40 fill-muted/30 stroke-border"
           strokeWidth="1.5"
+          filter="url(#shadow)"
         />
 
         {/* City dots */}
@@ -66,60 +90,94 @@ export default function RussiaMap({ cities, onCityClick }: RussiaMapProps) {
             onMouseEnter={() => setHoveredCity(city.city)}
             onMouseLeave={() => setHoveredCity(null)}
           >
-            {/* Glow effect */}
+            {/* Enhanced glow effect for dark theme */}
+            {city.high > 0 && (
+              <circle
+                cx={city.x}
+                cy={city.y}
+                r={city.radius + 8}
+                fill="url(#cityGlowGradient)"
+                opacity="0.6"
+                filter="url(#neonGlow)"
+              />
+            )}
+            
+            {/* Outer glow ring */}
             <circle
               cx={city.x}
               cy={city.y}
               r={city.radius + 4}
-              className={city.high > 0 ? "fill-primary/20" : "fill-muted-foreground/10"}
+              className={city.high > 0 ? "dark:fill-cyan-400/20 fill-primary/20" : "dark:fill-slate-500/10 fill-muted-foreground/10"}
             />
+
             {/* Main dot */}
             <motion.circle
               cx={city.x}
               cy={city.y}
               r={city.radius}
-              className={city.high > 0 ? "fill-primary stroke-primary-foreground" : "fill-muted-foreground/60 stroke-background"}
+              className={city.high > 0 ? "dark:fill-cyan-400 dark:stroke-cyan-300 fill-primary stroke-primary-foreground" : "dark:fill-slate-500 dark:stroke-slate-400 fill-muted-foreground/60 stroke-background"}
               strokeWidth="2"
               initial={{ scale: 0 }}
               animate={{
                 scale: hoveredCity === city.city ? 1.3 : 1,
               }}
               transition={{ delay: i * 0.05, type: "spring", stiffness: 300 }}
+              filter={city.high > 0 ? "url(#neonGlow)" : undefined}
             />
+
             {/* Count label */}
             <text
               x={city.x}
               y={city.y + 1}
               textAnchor="middle"
               dominantBaseline="central"
-              className="fill-primary-foreground font-bold pointer-events-none"
+              className="dark:fill-slate-900 fill-primary-foreground font-bold pointer-events-none"
               fontSize={city.radius > 10 ? 10 : 8}
+              fontWeight="bold"
             >
               {city.total}
             </text>
-            {/* City name on hover */}
+
+            {/* City name on hover - enhanced */}
             {hoveredCity === city.city && (
-              <g>
+              <motion.g
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.2 }}
+              >
                 <rect
-                  x={city.x - 60}
-                  y={city.y - city.radius - 30}
-                  width={120}
-                  height={24}
+                  x={city.x - 65}
+                  y={city.y - city.radius - 35}
+                  width={130}
+                  height={28}
                   rx={6}
-                  className="fill-card stroke-border"
-                  strokeWidth="1"
+                  className="dark:fill-slate-900/95 dark:stroke-cyan-400 fill-card stroke-border"
+                  strokeWidth="2"
+                  filter="url(#neonGlow)"
                 />
                 <text
                   x={city.x}
-                  y={city.y - city.radius - 18}
+                  y={city.y - city.radius - 20}
                   textAnchor="middle"
                   dominantBaseline="central"
-                  className="fill-card-foreground font-semibold"
-                  fontSize="11"
+                  className="dark:fill-cyan-300 fill-card-foreground font-semibold"
+                  fontSize="12"
+                  fontWeight="600"
                 >
-                  {city.city} ({city.total})
+                  {city.city}
                 </text>
-              </g>
+                <text
+                  x={city.x}
+                  y={city.y - city.radius - 8}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  className="dark:fill-cyan-200/80 fill-muted-foreground text-xs"
+                  fontSize="10"
+                >
+                  {city.total} компаний
+                </text>
+              </motion.g>
             )}
           </g>
         ))}
