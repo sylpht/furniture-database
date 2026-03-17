@@ -1,11 +1,13 @@
 /*
- * Professional Interactive Russia Map
- * Uses D3.js with accurate GeoJSON data
- * Features: Accurate projections, region highlighting, and city markers
+ * Professional Interactive Russia Map - Dark Canvas Edition
+ * Uses Leaflet with custom Dark Matter tiles and advanced VFX
+ * Features: Smooth animations, neon markers, heatmaps, and cinematic effects
  */
 import { useEffect, useRef, useState, useMemo } from "react";
-import { geoAlbers, geoPath } from "d3-geo";
+import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from "react-leaflet";
+import L from "leaflet";
 import { motion, AnimatePresence } from "framer-motion";
+import "leaflet/dist/leaflet.css";
 
 interface CityData {
   city: string;
@@ -20,204 +22,140 @@ interface RussiaMapProps {
   onCityClick?: (city: string) => void;
 }
 
-interface GeoFeature {
-  type: string;
-  geometry: {
-    type: string;
-    coordinates: any[];
-  };
-  properties?: {
-    name?: string;
-  };
-}
+// Custom dark tile layer (CartoDB Positron Dark)
+const DARK_TILE_URL = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+const TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
-interface GeoJSON {
-  type: string;
-  features: GeoFeature[];
-}
-
-export default function RussiaMap({ cities, onCityClick }: RussiaMapProps) {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const [geoData, setGeoData] = useState<GeoJSON | null>(null);
+// Map controller component
+function MapController({ cities, onCityClick }: { cities: CityData[]; onCityClick?: (city: string) => void }) {
+  const map = useMap();
   const [hoveredCity, setHoveredCity] = useState<string | null>(null);
-  const [hoveredRegion, setHoveredRegion] = useState<string | null>(null);
 
-  // Load GeoJSON data
   useEffect(() => {
-    fetch("/data/russia.json")
-      .then((res) => res.json())
-      .then((data) => setGeoData(data))
-      .catch((err) => console.error("Failed to load GeoJSON:", err));
-  }, []);
+    // Fit bounds to Russia
+    const bounds = L.latLngBounds([
+      [41.1, 19.6],  // Southwest corner
+      [81.9, 169.4]  // Northeast corner
+    ]);
+    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 5 });
+  }, [map]);
 
   const cityMarkers = useMemo(() => {
     return cities.map((c) => ({
       ...c,
-      radius: Math.max(3, Math.min(10, Math.sqrt(c.total) * 2))
+      radius: Math.max(6, Math.min(16, Math.sqrt(c.total) * 2.5))
     }));
   }, [cities]);
 
-  // Render map
-  useEffect(() => {
-    if (!svgRef.current || !geoData) return;
+  return (
+    <>
+      {cityMarkers.map((city, i) => (
+        <CircleMarker
+          key={city.city}
+          center={[city.lat, city.lng]}
+          radius={city.radius}
+          fillColor={city.high > 0 ? "#00bcd4" : "#64748b"}
+          fillOpacity={city.high > 0 ? 0.8 : 0.6}
+          color={city.high > 0 ? "#00e5ff" : "#cbd5e1"}
+          weight={city.high > 0 ? 2 : 1}
+          className={`cursor-pointer transition-all ${city.high > 0 ? "hover:shadow-lg hover:shadow-cyan-400/50" : ""}`}
+          eventHandlers={{
+            click: () => onCityClick?.(city.city),
+            mouseover: () => setHoveredCity(city.city),
+            mouseout: () => setHoveredCity(null)
+          }}
+        >
+          <Popup>
+            <div className="text-sm font-semibold dark:text-slate-900">
+              {city.city}
+              <br />
+              <span className="text-xs text-slate-600">{city.total} компаний</span>
+              {city.high > 0 && <div className="text-[10px] text-cyan-500 mt-1">✨ Высокий потенциал</div>}
+            </div>
+          </Popup>
+        </CircleMarker>
+      ))}
 
-    const width = 960;
-    const height = 550;
+      {/* Animated heatmap effect for high-potential regions */}
+      {cities
+        .filter((c) => c.high > 0)
+        .map((city) => (
+          <CircleMarker
+            key={`heatmap-${city.city}`}
+            center={[city.lat, city.lng]}
+            radius={city.radius + 8}
+            fillColor="#00bcd4"
+            fillOpacity={0.15}
+            color="transparent"
+            weight={0}
+            className="animate-pulse"
+          />
+        ))}
+    </>
+  );
+}
 
-    // Set up projection
-    const projection = geoAlbers()
-      .rotate([-105, 0])
-      .center([0, 65])
-      .parallels([50, 70])
-      .scale(700)
-      .translate([width / 2, height / 2]);
-
-    const pathGenerator = geoPath().projection(projection);
-
-    // Clear previous content
-    const svg = svgRef.current;
-    svg.innerHTML = "";
-
-    // Create SVG groups
-    const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-    const filterGlow = document.createElementNS("http://www.w3.org/2000/svg", "filter");
-    filterGlow.setAttribute("id", "glow");
-    filterGlow.innerHTML = `
-      <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-      <feMerge>
-        <feMergeNode in="coloredBlur" />
-        <feMergeNode in="SourceGraphic" />
-      </feMerge>
-    `;
-    defs.appendChild(filterGlow);
-    svg.appendChild(defs);
-
-    // Draw regions
-    geoData.features.forEach((feature) => {
-      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      const d = pathGenerator(feature as any);
-      if (d) {
-        path.setAttribute("d", d);
-        path.setAttribute("class", "dark:fill-slate-800/40 dark:stroke-cyan-500/20 fill-muted/30 stroke-border hover:fill-cyan-400/20 dark:hover:fill-cyan-400/20 transition-all cursor-pointer");
-        path.setAttribute("stroke-width", "0.5");
-        path.setAttribute("vector-effect", "non-scaling-stroke");
-
-        path.addEventListener("mouseenter", () => {
-          setHoveredRegion(feature.properties?.name || null);
-          path.setAttribute("stroke-width", "1");
-          path.setAttribute("class", "dark:fill-cyan-400/20 dark:stroke-cyan-400 fill-primary/20 stroke-primary");
-        });
-
-        path.addEventListener("mouseleave", () => {
-          setHoveredRegion(null);
-          path.setAttribute("stroke-width", "0.5");
-          path.setAttribute("class", "dark:fill-slate-800/40 dark:stroke-cyan-500/20 fill-muted/30 stroke-border hover:fill-cyan-400/20 dark:hover:fill-cyan-400/20 transition-all cursor-pointer");
-        });
-
-        svg.appendChild(path);
-      }
-    });
-
-    // Draw city markers
-    cityMarkers.forEach((city, i) => {
-      const [x, y] = projection([city.lng, city.lat]) || [0, 0];
-
-      // Glow effect for high potential
-      if (city.high > 0) {
-        const glow = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        glow.setAttribute("cx", String(x));
-        glow.setAttribute("cy", String(y));
-        glow.setAttribute("r", String(city.radius + 4));
-        glow.setAttribute("class", "fill-cyan-400/20 animate-pulse");
-        glow.setAttribute("filter", "url(#glow)");
-        glow.style.opacity = "0.6";
-        svg.appendChild(glow);
-      }
-
-      // Main marker
-      const marker = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      marker.setAttribute("cx", String(x));
-      marker.setAttribute("cy", String(y));
-      marker.setAttribute("r", String(city.radius));
-      marker.setAttribute(
-        "class",
-        city.high > 0
-          ? "fill-cyan-400 stroke-cyan-200 dark:stroke-cyan-100 cursor-pointer hover:opacity-80 transition-opacity"
-          : "fill-slate-400 stroke-white dark:fill-slate-500 dark:stroke-slate-800 cursor-pointer hover:opacity-80 transition-opacity"
-      );
-      marker.setAttribute("stroke-width", "1.5");
-
-      marker.addEventListener("mouseenter", () => {
-        setHoveredCity(city.city);
-        marker.setAttribute("r", String(city.radius * 1.4));
-        if (city.high > 0) {
-          marker.setAttribute("filter", "url(#glow)");
-        }
-      });
-
-      marker.addEventListener("mouseleave", () => {
-        setHoveredCity(null);
-        marker.setAttribute("r", String(city.radius));
-        marker.removeAttribute("filter");
-      });
-
-      marker.addEventListener("click", () => {
-        onCityClick?.(city.city);
-      });
-
-      svg.appendChild(marker);
-
-      // Count label inside dot if large enough
-      if (city.radius > 6) {
-        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        text.setAttribute("x", String(x));
-        text.setAttribute("y", String(y));
-        text.setAttribute("text-anchor", "middle");
-        text.setAttribute("dominant-baseline", "central");
-        text.setAttribute("class", "fill-slate-900 dark:fill-slate-900 font-bold pointer-events-none text-xs");
-        text.setAttribute("font-size", city.radius > 8 ? "10" : "8");
-        text.setAttribute("font-weight", "bold");
-        text.textContent = String(city.total);
-        svg.appendChild(text);
-      }
-    });
-  }, [geoData, cityMarkers, onCityClick]);
+export default function RussiaMap({ cities, onCityClick }: RussiaMapProps) {
+  const [hoveredCity, setHoveredCity] = useState<string | null>(null);
 
   return (
-    <div className="relative w-full rounded-xl overflow-hidden bg-slate-50 dark:bg-[#0f0f1e] border border-border dark:border-cyan-500/20 shadow-inner">
-      <svg
-        ref={svgRef}
-        viewBox="0 0 960 550"
-        className="w-full h-auto"
-        style={{ minHeight: 400 }}
-      />
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6 }}
+      className="relative w-full rounded-xl overflow-hidden bg-slate-50 dark:bg-[#0a0a14] border border-border dark:border-cyan-500/20 shadow-2xl"
+      style={{ minHeight: 550 }}
+    >
+      {/* Map Container */}
+      <MapContainer
+        center={[61.5, 105.3]}
+        zoom={3}
+        style={{ width: "100%", height: "100%", minHeight: 550 }}
+        className="dark:bg-[#0a0a14]"
+      >
+        <TileLayer
+          url={DARK_TILE_URL}
+          attribution={TILE_ATTRIBUTION}
+          maxZoom={8}
+          minZoom={2}
+          className="dark:brightness-75 dark:contrast-125"
+        />
+        <MapController cities={cities} onCityClick={onCityClick} />
+      </MapContainer>
 
-      {/* Custom Tooltip */}
-      <AnimatePresence>
-        {hoveredCity && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className="absolute bottom-4 left-4 p-3 rounded-lg bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-border dark:border-cyan-500/40 shadow-xl pointer-events-none z-10"
-          >
-            <p className="text-sm font-bold dark:text-cyan-300">{hoveredCity}</p>
-            <p className="text-xs text-muted-foreground dark:text-slate-400">
-              {cities.find((c) => c.city === hoveredCity)?.total} компаний
-            </p>
-            {cities.find((c) => c.city === hoveredCity)?.high! > 0 && (
-              <p className="text-[10px] text-cyan-500 font-medium mt-1">✨ Высокий потенциал</p>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Map Controls Hint */}
-      <div className="absolute top-4 right-4 flex flex-col gap-2">
-        <div className="px-2 py-1 rounded bg-black/20 backdrop-blur-sm text-[10px] text-white/70">
-          Нажмите на город для фильтрации
+      {/* Legend */}
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.3, duration: 0.5 }}
+        className="absolute top-4 left-4 p-4 rounded-lg bg-black/40 backdrop-blur-md border border-cyan-500/30 shadow-xl z-[400]"
+      >
+        <p className="text-xs font-semibold text-cyan-300 mb-3">Легенда</p>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/50"></div>
+            <span className="text-[10px] text-slate-300">Высокий потенциал</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-slate-400"></div>
+            <span className="text-[10px] text-slate-300">Другие города</span>
+          </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+
+      {/* Info Panel */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, duration: 0.5 }}
+        className="absolute bottom-4 right-4 p-4 rounded-lg bg-black/40 backdrop-blur-md border border-cyan-500/30 shadow-xl z-[400]"
+      >
+        <p className="text-xs text-slate-400 mb-2">Интерактивная карта России</p>
+        <p className="text-[10px] text-cyan-400">Кликните на город для фильтрации</p>
+      </motion.div>
+
+      {/* Animated gradient overlay for depth */}
+      <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-transparent to-black/10 dark:to-black/30 rounded-xl"></div>
+    </motion.div>
   );
 }
