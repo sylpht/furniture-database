@@ -18,6 +18,13 @@ interface QuickActionsProps {
 export default function QuickActions({ phone, email, site, whatsapp, telegram, companyName, scriptText }: QuickActionsProps) {
   const cleanPhone = phone?.replace(/[^+\d]/g, "").split(",")[0] || "";
   
+  const formatExternalUrl = (url: string) => {
+    if (!url) return "";
+    const trimmed = url.trim();
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+    return `https://${trimmed}`;
+  };
+  
   const handleWhatsApp = () => {
     const message = scriptText ? encodeURIComponent(scriptText) : "Здравствуйте! Я хотел бы обсудить возможность сотрудничества.";
     const number = (whatsapp || cleanPhone).replace(/[^+\d]/g, "").replace("+", "");
@@ -59,7 +66,7 @@ export default function QuickActions({ phone, email, site, whatsapp, telegram, c
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8 text-purple-600 hover:text-purple-700 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-950" asChild>
-              <a href={site.startsWith("http") ? site : `https://${site}`} target="_blank" rel="noopener noreferrer"><Globe className="w-4 h-4" /></a>
+              <a href={formatExternalUrl(site)} target="_blank" rel="noopener noreferrer"><Globe className="w-4 h-4" /></a>
             </Button>
           </TooltipTrigger>
           <TooltipContent><p>Открыть сайт</p></TooltipContent>

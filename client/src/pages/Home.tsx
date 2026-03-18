@@ -93,6 +93,16 @@ function getPotentialLabel(pot: string): string {
   return "Минимальный";
 }
 
+/* ========== RUSSIAN PLURALIZATION ========== */
+function pluralize(n: number, one: string, few: string, many: string): string {
+  const abs = Math.abs(n) % 100;
+  const lastDigit = abs % 10;
+  if (abs >= 11 && abs <= 19) return many;
+  if (lastDigit === 1) return one;
+  if (lastDigit >= 2 && lastDigit <= 4) return few;
+  return many;
+}
+
 function AnimatedCounter({ value, duration = 1500 }: { value: number; duration?: number }) {
   const [count, setCount] = useState(0);
   useEffect(() => {
@@ -149,6 +159,13 @@ function CompanyCard({ company, index, priorityScore, getStatus, setStatus, getN
   siteStatus?: any;
 }) {
   const [expanded, setExpanded] = useState(false);
+  
+  const formatExternalUrl = (url: string) => {
+    if (!url) return "";
+    const trimmed = url.trim();
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+    return `https://${trimmed}`;
+  };
   const level = getPotentialLevel(company["Потенциал сотрудничества"]);
   const borderColor = level === "high" ? "border-l-teal-500" : level === "medium" ? "border-l-amber-500" : level === "low" ? "border-l-orange-400" : "border-l-slate-300 dark:border-l-slate-600";
 
@@ -167,7 +184,7 @@ function CompanyCard({ company, index, priorityScore, getStatus, setStatus, getN
               </div>
               <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
                 <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{company["Город"]}</span>
-                {company["Телефон"] && <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" />{company["Телефон"].split(",")[0]}</span>}
+                <span className="flex items-center gap-1"><Phone className="w-3.5 h-3.5" />{company["Телефон"] ? company["Телефон"].split(",")[0] : <span className="italic text-muted-foreground/50">Нет телефона</span>}</span>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
@@ -197,7 +214,7 @@ function CompanyCard({ company, index, priorityScore, getStatus, setStatus, getN
                     {company["Регион"] && <div className="flex items-center gap-2 text-muted-foreground"><MapPin className="w-4 h-4 shrink-0" /><span>{company["Регион"]}</span></div>}
                     {company["Адрес"] && <div className="flex items-start gap-2 text-muted-foreground"><Building2 className="w-4 h-4 mt-0.5 shrink-0" /><span className="break-words">{company["Адрес"]}</span></div>}
                     {company["Email"] && <div className="flex items-center gap-2 text-muted-foreground"><Mail className="w-4 h-4 shrink-0" /><a href={`mailto:${company["Email"]}`} className="text-primary hover:underline break-all" onClick={(e) => e.stopPropagation()}>{company["Email"]}</a></div>}
-                    {company["Сайт"] && <div className="flex items-center gap-2 text-muted-foreground"><Globe className="w-4 h-4 shrink-0" /><a href={company["Сайт"].startsWith("http") ? company["Сайт"] : `https://${company["Сайт"]}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate" onClick={(e) => e.stopPropagation()}>{company["Сайт"].replace(/^https?:\/\//, "").replace(/\/$/, "")}</a></div>}
+                    {company["Сайт"] && <div className="flex items-center gap-2 text-muted-foreground"><Globe className="w-4 h-4 shrink-0" /><a href={formatExternalUrl(company["Сайт"])} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate" onClick={(e) => e.stopPropagation()}>{company["Сайт"].replace(/^https?:\/\//, "").replace(/\/$/, "")}</a></div>}
                     {company["Телефон"] && <div className="flex items-start gap-2 text-muted-foreground"><Phone className="w-4 h-4 mt-0.5 shrink-0" /><span className="break-words">{company["Телефон"]}</span></div>}
                     {company["Соцсети"] && <div className="flex items-start gap-2 text-muted-foreground"><ExternalLink className="w-4 h-4 mt-0.5 shrink-0" /><span className="break-all text-xs">{company["Соцсети"]}</span></div>}
                   </div>
@@ -274,9 +291,9 @@ function CompanyTable({ companies, priorityScores, getStatus, setStatus, siteRes
                   </div>
                 </td>
                 <td className="py-2 px-3 text-muted-foreground">{c["Город"]}</td>
-                <td className="py-2 px-3"><QuickActions phone={c["Телефон"]} email={c["Email"]} site={c["Сайт"]} whatsapp={c["WhatsApp"]} /></td>
-                <td className="py-2 px-3 text-muted-foreground text-xs max-w-[150px] truncate">{c["Телефон"]}</td>
-                <td className="py-2 px-3">{c["Email"] && <a href={`mailto:${c["Email"]}`} className="text-primary hover:underline text-xs truncate block max-w-[180px]">{c["Email"]}</a>}</td>
+                <td className="py-2 px-3"><QuickActions phone={c["Телефон"]} email={c["Email"]} site={c["Сайт"]} whatsapp={c["WhatsApp"]} telegram={c["Telegram"]} companyName={c["Название"]} scriptText={getFullScript(c, "official", "all")} /></td>
+                <td className="py-2 px-3 text-muted-foreground text-xs max-w-[150px] truncate">{c["Телефон"] || <span className="italic text-muted-foreground/40">—</span>}</td>
+                <td className="py-2 px-3">{c["Email"] ? <a href={`mailto:${c["Email"]}`} className="text-primary hover:underline text-xs truncate block max-w-[180px]">{c["Email"]}</a> : <span className="italic text-muted-foreground/40 text-xs">—</span>}</td>
                 <td className="py-2 px-3">
                   <Badge variant="secondary" className={`text-[10px] ${
                     level === "high" ? "bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300"
@@ -409,9 +426,8 @@ export default function Home() {
             <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white mb-3 leading-tight">
               База мебельных компаний<span className="text-teal-400"> России</span>
             </h1>
-            <p className="text-slate-300 text-base sm:text-lg max-w-2xl leading-relaxed">
-              {data.total} компаний: {data.furniture_count} мебельных + {data.studios_count} дизайн-студий + {data.horeca_count || 0} HoReCa.
-              {data.cities_count} городов, {data.regions_count} регионов.
+            <p className="text-slate-300 text-base sm:text-lg max-w-3xl leading-relaxed">
+              {data.total} компаний: {data.furniture_count} мебельных + {data.studios_count} дизайн-студий + {data.horeca_count || 0} HoReCa. {data.cities_count}&nbsp;городов, {data.regions_count}&nbsp;регионов.
             </p>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.6 }} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mt-8">
@@ -535,7 +551,7 @@ export default function Home() {
             </Card>
 
             <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">Найдено: <span className="font-semibold text-foreground">{filteredCompanies.length}</span> компаний</p>
+              <p className="text-sm text-muted-foreground">Найдено: <span className="font-semibold text-foreground">{filteredCompanies.length}</span> {pluralize(filteredCompanies.length, 'компания', 'компании', 'компаний')}</p>
               <Button variant="ghost" size="sm" onClick={handleExportCSV} className="text-xs text-muted-foreground"><Download className="w-3.5 h-3.5 mr-1" />Экспорт CSV</Button>
             </div>
 
@@ -633,41 +649,8 @@ export default function Home() {
           </TabsContent>
 
           {/* MAP TAB */}
-          <TabsContent value="map" className="space-y-4">
-            <Card className="dark:bg-gradient-to-br dark:from-slate-800 dark:to-slate-900 dark:border-cyan-500/30 bg-card border-border shadow-sm">
-              <CardHeader className="pb-3 dark:border-b dark:border-cyan-500/20">
-                <CardTitle className="font-heading text-lg flex items-center gap-2">
-                  <MapIcon className="w-5 h-5 dark:text-cyan-400 text-primary" />
-                  <span className="dark:text-cyan-300">Интерактивная карта России</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-                  <div className="flex items-start gap-2 dark:bg-slate-700/50 bg-muted/50 p-3 rounded-lg">
-                    <div className="w-4 h-4 rounded-full dark:bg-cyan-400 bg-primary mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium dark:text-cyan-300 text-primary">Высокий потенциал</p>
-                      <p className="text-xs dark:text-slate-400 text-muted-foreground">Города с перспективными компаниями</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2 dark:bg-slate-700/50 bg-muted/50 p-3 rounded-lg">
-                    <div className="w-4 h-4 rounded-full dark:bg-slate-500 bg-muted-foreground mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium dark:text-slate-300 text-foreground">Другие города</p>
-                      <p className="text-xs dark:text-slate-400 text-muted-foreground">Размер точки = количество компаний</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2 dark:bg-slate-700/50 bg-muted/50 p-3 rounded-lg">
-                    <MapIcon className="w-4 h-4 dark:text-cyan-400 text-primary mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium dark:text-cyan-300 text-primary">Интерактивность</p>
-                      <p className="text-xs dark:text-slate-400 text-muted-foreground">Кликните на город для фильтрации</p>
-                    </div>
-                  </div>
-                </div>
-                <RussiaMap cities={mapCities} onCityClick={(city) => setSelectedCity(city)} />
-              </CardContent>
-            </Card>
+          <TabsContent value="map" className="space-y-0">
+            <RussiaMap cities={mapCities} onCityClick={(city) => setSelectedCity(city)} />
           </TabsContent>
 
           {/* TOP TAB */}
@@ -679,7 +662,9 @@ export default function Home() {
               </CardContent>
             </Card>
             <div className="space-y-3">
-              {data.companies.filter((c) => getPotentialLevel(c["Потенциал сотрудничества"]) === "high").map((c, i) => (
+              {data.companies.filter((c) => getPotentialLevel(c["Потенциал сотрудничества"]) === "high")
+                .sort((a, b) => (priorityScores.get(b["Название"]) || 0) - (priorityScores.get(a["Название"]) || 0))
+                .map((c, i) => (
                 <CompanyCard key={c["Название"] + "-top-" + i} company={c} index={i} priorityScore={priorityScores.get(c["Название"]) || 0} getStatus={getStatus} setStatus={setStatus} getNote={getNote} setNote={setNote} siteStatus={siteResults[c["Название"]]} />
               ))}
             </div>
@@ -722,10 +707,33 @@ export default function Home() {
               <CardContent className="p-5">
                 <h3 className="font-heading font-bold text-base flex items-center gap-2 mb-3"><Download className="w-5 h-5 text-primary" />Экспорт данных</h3>
                 <div className="flex flex-wrap gap-3">
-                  <Button onClick={handleExportCSV} variant="outline"><Download className="w-4 h-4 mr-1.5" />Экспорт текущей выборки ({filteredCompanies.length} компаний)</Button>
-                  <Button onClick={() => exportToCSV(data.companies, `all_furniture_companies_${data.total}.csv`)} variant="outline"><Download className="w-4 h-4 mr-1.5" />Экспорт всей базы ({data.total} компаний)</Button>
+                  <Button onClick={handleExportCSV} variant="outline"><Download className="w-4 h-4 mr-1.5" />Экспорт текущей выборки ({filteredCompanies.length} {pluralize(filteredCompanies.length, 'компания', 'компании', 'компаний')})</Button>
+                  <Button onClick={() => exportToCSV(data.companies, `all_furniture_companies_${data.total}.csv`)} variant="outline"><Download className="w-4 h-4 mr-1.5" />Экспорт всей базы ({data.total} {pluralize(data.total, 'компания', 'компании', 'компаний')})</Button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-3">CSV-файл с кодировкой UTF-8 BOM, совместим с Excel и Google Sheets.</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-card border-border shadow-sm">
+              <CardContent className="p-5">
+                <h3 className="font-heading font-bold text-base flex items-center gap-2 mb-3"><BarChart3 className="w-5 h-5 text-primary" />Статистика базы</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground">С Email</p>
+                    <p className="text-lg font-bold text-foreground">{data.companies.filter(c => c.Email).length}</p>
+                  </div>
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground">С телефоном</p>
+                    <p className="text-lg font-bold text-foreground">{data.companies.filter(c => c["Телефон"]).length}</p>
+                  </div>
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground">С сайтом</p>
+                    <p className="text-lg font-bold text-foreground">{data.companies.filter(c => c["Сайт"]).length}</p>
+                  </div>
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground">С WhatsApp</p>
+                    <p className="text-lg font-bold text-foreground">{data.companies.filter(c => c.WhatsApp).length}</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -735,7 +743,7 @@ export default function Home() {
       <footer className="border-t border-border bg-card py-6">
         <div className="container text-center">
           <p className="text-sm text-muted-foreground">База мебельных компаний России для B2B-аутрича</p>
-          <p className="text-xs text-muted-foreground/60 mt-1">{data.total} компаний &middot; {data.cities_count} городов &middot; {data.regions_count} регионов</p>
+          <p className="text-xs text-muted-foreground/60 mt-1">{data.total} {pluralize(data.total, 'компания', 'компании', 'компаний')} &middot; {data.cities_count} {pluralize(data.cities_count, 'город', 'города', 'городов')} &middot; {data.regions_count} {pluralize(data.regions_count, 'регион', 'региона', 'регионов')}</p>
         </div>
       </footer>
     </div>
