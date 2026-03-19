@@ -233,7 +233,7 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { getStatus, setStatus } = useCallStatus();
-  const { getScore, weights, setWeights } = usePriorityScore();
+  const { calculateScore: getScore, weights, updateWeight: setWeights } = usePriorityScore();
   const { checkSite, results: siteResults, isChecking } = useSiteChecker();
 
   const handleCompanySelect = (company: Company) => {
