@@ -82,15 +82,17 @@ const COLORS = { high: "#0d9488", medium: "#f59e0b", low: "#f97316", min: "#94a3
 const PIE_COLORS = ["#0d9488", "#f59e0b", "#3b82f6", "#f97316", "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16"];
 
 function getPotentialLevel(pot: string): string {
-  if (pot.includes("ВЫСОКИЙ")) return "high";
-  if (pot.includes("СРЕДНИЙ")) return "medium";
-  if (pot.includes("НИЗКИЙ")) return "low";
+  const p = (pot || "").toUpperCase();
+  if (p.includes("ВЫСОКИЙ")) return "high";
+  if (p.includes("СРЕДНИЙ")) return "medium";
+  if (p.includes("НИЗКИЙ")) return "low";
   return "min";
 }
 function getPotentialLabel(pot: string): string {
-  if (pot.includes("ВЫСОКИЙ")) return "Высокий";
-  if (pot.includes("СРЕДНИЙ")) return "Средний";
-  if (pot.includes("НИЗКИЙ")) return "Низкий";
+  const p = (pot || "").toUpperCase();
+  if (p.includes("ВЫСОКИЙ")) return "Высокий";
+  if (p.includes("СРЕДНИЙ")) return "Средний";
+  if (p.includes("НИЗКИЙ")) return "Низкий";
   return "Минимальный";
 }
 
@@ -244,9 +246,9 @@ export default function Home() {
   const filteredCompanies = useMemo(() => {
     return data.companies.filter((c) => {
       const matchesSearch =
-        c["Название"].toLowerCase().includes(search.toLowerCase()) ||
-        c["Город"].toLowerCase().includes(search.toLowerCase()) ||
-        c["Специализация"].toLowerCase().includes(search.toLowerCase());
+        (c["Название"] || "").toLowerCase().includes(search.toLowerCase()) ||
+        (c["Город"] || "").toLowerCase().includes(search.toLowerCase()) ||
+        (c["Специализация"] || "").toLowerCase().includes(search.toLowerCase());
       const matchesRegion = !selectedRegion || c["Регион"] === selectedRegion;
       const matchesCity = !selectedCity || c["Город"] === selectedCity;
       const matchesType = !selectedType || c["Тип"] === selectedType;
